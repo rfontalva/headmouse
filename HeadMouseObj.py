@@ -1,8 +1,6 @@
 import cv2
 import numpy as np
 from pynput.mouse import Button, Controller
-import face_recognition as fr
-import time
 import os
 import dlib
 from scipy.spatial import distance as dist
