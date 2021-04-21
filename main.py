@@ -1,4 +1,4 @@
-from HeadMouseObj import HeadMouse
+from HeadMouse import HeadMouse
 
 def myprint():
     print('wink wink')
