@@ -1,18 +1,67 @@
+"""
+The HeadMouse module is meant to be an augmentative tool, used to level the
+opportunities of access to a computer to those without the motor capabilities
+to handle a mouse.
+The tool provides an interface by opening the web camera and detecting the 
+user's face to control the mouse by tilting the head.
+It can also be customized to trigger different functions instead of a mouse
+click when the user winks.
+
+El módulo HeadMouse pretende ser una herramienta aumentativa, usada para
+nivelar las oportunidades de acceso a una computadora para aquellos que no
+poseen las habilidades motrices para manejar un mouse.
+La herramienta provee una interfaz abriendo la cámara web de la computadora,
+mediante la cual se detecta la cara del usuario y se controla el cursor con
+la inclinación de la cabeza, tomando la punta de la nariz como referencia.
+"""
+
 import cv2
 import numpy as np
 import os
+import sys
 import dlib
 from pynput.mouse import Button, Controller
 from HeadMouse_utils import eye_aspect_ratio
 
 
-class HeadMouse(object):
+class Singleton(type):
+    """
+    This is the metaclass from which the HeadMouse will inherit, it is declared
+    to prevent the creation of two or more objects of the HeadMouse class, since
+    the camera resource can't be shared and this would trigger an error.
+
+    Esta es la metaclase de la que heredará HeadMouse, declarada para evitar la
+    creación de dos o más objetos de la clase HeadMouse, dado que la camara es un
+    recurso que no puede ser compartido y esto dispararía un error.
+    """
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(
+                Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class HeadMouse(object, metaclass=Singleton):
     def __init__(self, is_right=True, use_mouth_twitch=False, sensitivity=None):
+        """
+        The constructor is by default set to create an instance of HeadMouse that
+        uses the wink of the right eye to trigger a mouse click, with a base 
+        sensitivity of 0.3 and ignore mouth twitching.
+
+        El constructor esta configurado por default para generar una instancia del
+        HeadMouse que usa el guiño del ojo derecho para disparar el click del mouse,
+        una sensibilidad base de 0.3 y para ignorar el movimiento de la boca.  
+        """
         dir = os.path.dirname(__file__)
-        predictor_path = os.path.join(
-            dir, "shape_predictor_68_face_landmarks.dat")
+        predictor_path = ("./shape_predictor_68_face_landmarks.dat")
         self.detector = dlib.get_frontal_face_detector()
-        self.cap = cv2.VideoCapture(0)
+        try:
+            self.cap = cv2.VideoCapture(0)
+        except e:
+            raise Exception(f'No camera available {e}')
+            sys.exit(1)
         self.predictor = dlib.shape_predictor(predictor_path)
         self.is_calibrated = False
         self.nose_y = 0
@@ -50,7 +99,7 @@ class HeadMouse(object):
                 self.mouth_processing(landmarks)
                 self.eye_processing(landmarks)
                 if use_mouse:
-                    self.update_mouse_position()   
+                    self.update_mouse_position()
 
     def quit(self):
         self.cap.release()
@@ -88,10 +137,12 @@ class HeadMouse(object):
         rel_y_mov = self.coef_sens * (self.nose_y - self.center[1])
         if np.absolute(rel_x_mov) > 2:
             new_mouse_x = self.mouse.position[0] + rel_x_mov
-            self.mouse.position = (self.mouse.position[0] + self.coef_sens * (self.nose_x - self.center[0]), self.mouse.position[1])
+            self.mouse.position = (self.mouse.position[0] + self.coef_sens * (
+                self.nose_x - self.center[0]), self.mouse.position[1])
         if np.absolute(rel_y_mov) > 2:
             new_mouse_y = self.mouse.position[1] + rel_y_mov
-            self.mouse.position = (self.mouse.position[0], self.mouse.position[1] + self.coef_sens * (self.nose_y - self.center[1]))
+            self.mouse.position = (
+                self.mouse.position[0], self.mouse.position[1] + self.coef_sens * (self.nose_y - self.center[1]))
 
     def eye_processing(self, landmarks):
         self.eye = landmarks[self.eye_points]

@@ -21,5 +21,5 @@ pip install -r requirements.txt
 
 ```shell
 source venv/bin/activate
-python HeadMouseCaseOfUse.py
+python main.py
 ```
