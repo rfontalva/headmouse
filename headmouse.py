@@ -129,7 +129,7 @@ class HeadMouse(metaclass=HeadMouseSingleton):
 
     def _mouth_processing(self, landmarks):
         """
-        rcp: relative right corner points
+        rcp: right corner points
         rel: relative
         """
         if self.use_mouth_twitch:
