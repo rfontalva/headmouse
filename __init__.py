@@ -1,2 +1,2 @@
-from .headmouse_singleton import HeadMouseSingleton
-from .headmouse import HeadMouse
+from .headmouse_singleton import HeadmouseSingleton
+from .headmouse import Headmouse

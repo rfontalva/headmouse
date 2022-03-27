@@ -19,7 +19,7 @@ class MouseController:
             self.mouse.position[0], self.mouse.position[1] + self.coef_sens * (y - center[1]))
 
     def down(self, y, center):
-        self.mouse.position = (self.mouse.position[0], self.mouse.position[1] + self.coef_sens * (y - center[0]))
+        self.mouse.position = (self.mouse.position[0], self.mouse.position[1] + self.coef_sens * (y - center[1]))
 
     def wink(self):
         self.mouse.click(Button.left, 1)

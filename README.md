@@ -18,7 +18,7 @@ An opensource project developed in UTN-FRBA by Ramiro Fontalva.
 ## Run demo
 
 ```python
-from Headmouse import HeadMouse
+from headmouse import Headmouse
 import cv2
 
 if __name__ == "__main__":

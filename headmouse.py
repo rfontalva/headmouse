@@ -1,5 +1,5 @@
 """
-The HeadMouse module provides an interface by opening the web camera and 
+The Headmouse module provides an interface by opening the web camera and 
 detecting the user's face to control the mouse by tilting the head using 
 the tip of the nose as reference point.
 It can also be customized to trigger different functions instead of a mouse
@@ -16,14 +16,14 @@ import cv2
 import numpy as np
 import dlib
 from typing import TypeVar
-from .headmouse_singleton import HeadMouseSingleton
+from .headmouse_singleton import HeadmouseSingleton
 from .headmouse_utils import eye_aspect_ratio
 from .controller.mouse_controller import MouseController
 from .controller.abstract_controller import AbstractController
 
 AbstractController_ = TypeVar('AbstractController_', bound=AbstractController)
 
-class HeadMouse(metaclass=HeadMouseSingleton):
+class Headmouse(metaclass=HeadmouseSingleton):
     """
     Parameters:
 
@@ -103,7 +103,7 @@ class HeadMouse(metaclass=HeadMouseSingleton):
         parenthesis. Example:
         def myFunction: 
             pass
-        HeadMouse.on_eye_closed(myFunction)
+        Headmouse.on_eye_closed(myFunction)
         """
         self.wink_function = function
 
@@ -114,7 +114,7 @@ class HeadMouse(metaclass=HeadMouseSingleton):
         parenthesis. Example:
         def myFunction: 
             pass
-        HeadMouse.on_mouth_twitched(myFunction)
+        Headmouse.on_mouth_twitched(myFunction)
         """
         self.mouth_twitched_function = function
 
