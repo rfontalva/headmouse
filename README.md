@@ -1,25 +1,39 @@
 # Headmouse
-An opensource project developed in UTN-FRBA by Ramiro Fontalva
 
-This project is part of a larger one called "Tecnoapoyos y Sociedad", which aims to level the opportunities of access to technologies for those who are impaired by some kind of disability, motor or neurological. The purpouse of this API is to use the webcam to detect the user's face and move the cursor according to the tilt of their head, it can also link the wink of the right eye to a mouse's click. 
+The HeadMouse module provides an interface by opening the web camera anddetecting the user's face to control the mouse by tilting the head, 
+using the tip of the nose as reference point.
+It can also be customized to trigger different functions instead of a mouse click when the user winks.
+To use the module it\'s necessary to have the file shape_predictor_68_face_landmarks.dat.
 
-I am looking for constructive criticism and suggestions to improve this project and make it the best tool it can be to help those with disabilities, so please write me at ramirofontalva@gmail.com if you have any comment about it.
+Compressed:
+<http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2>
 
-Thank you!
+Uncompressed:
+<https://github.com/rfontalva/dlib_shape_predictor_68_face_landmarks/tree/master>'
 
+This project is part of a larger one called "Tecnoapoyos y Sociedad", which aims to level the opportunities of access to technologies for those who are impaired by some kind of disability, motor or neurological.
 
-## Install
-
-```shell script
-virtualenv -p $(which python3) venv  
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
+An opensource project developed in UTN-FRBA by Ramiro Fontalva.
 
 ## Run demo
 
-```shell
-source venv/bin/activate
-python main.py
+```python
+from Headmouse import HeadMouse
+import cv2
+
+if __name__ == "__main__":
+    predictor_path = "/path/to/shape_predictor_68_face_landmarks.dat"
+    h = HeadMouse(predictor_path=predictor_path)
+    h.update_threshold(10, 5)
+    while True:
+        h.refresh()
+        h.show_image()
+        key = cv2.waitKey(1)
+        if key == 27: #press escape
+            h.destroy_window()
+            h.quit()
+            break
+        if key == 32: #press spacebar
+            h.calibrate()
+            print("calibrated")
 ```

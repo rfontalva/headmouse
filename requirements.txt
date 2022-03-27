@@ -1,5 +1,4 @@
 opencv-python
 dlib
 pynput
-requests
 scipy
