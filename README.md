@@ -23,7 +23,7 @@ import cv2
 
 if __name__ == "__main__":
     predictor_path = "/path/to/shape_predictor_68_face_landmarks.dat"
-    h = HeadMouse(predictor_path=predictor_path)
+    h = Headmouse(predictor_path=predictor_path)
     h.update_threshold(10, 5)
     while True:
         h.refresh()
