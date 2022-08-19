@@ -21,9 +21,17 @@ class AbstractController(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def wink(self, *args, **kwargs):
+    def right_wink(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def left_wink(self, *args, **kwargs):
         pass
 
     @abstractmethod
     def mouth_twitch(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def update_coef_sens(self, *args, **kwargs):
         pass

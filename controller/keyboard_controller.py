@@ -17,12 +17,17 @@ class KeyboardController(AbstractController):
     def down(self, y, center):
         self.keyboard.press(self.strategy['down'])
 
-    def wink(self):
+    def right_wink(self):
         if self.strategy["type"] == "letters":
             self.strategy = {'type': 'numbers', 'left': '4', 'right': '6', 'up': '8', 'down': '2'}    
         else:
             self.strategy = {'type': 'letters', 'left': 'a', 'right': 'd', 'up': 'w', 'down': 's'}
 
+    def left_wink(self):
+        pass
+
     def mouth_twitch(self):
-        # print("twitch")
+        pass
+
+    def update_coef_sens(self):
         pass

@@ -17,7 +17,7 @@ import numpy as np
 import dlib
 from typing import TypeVar
 from .headmouse_singleton import HeadmouseSingleton
-from .headmouse_utils import eye_aspect_ratio
+from .headmouse_utils import eye_processing, get_closest_face
 from .controller.mouse_controller import MouseController
 from .controller.abstract_controller import AbstractController
 
@@ -34,13 +34,13 @@ class Headmouse(metaclass=HeadmouseSingleton):
     use_mouth_twitch (bool): Whether mouth movements will be
     evaluated or not.
     """
-    def __init__(self, predictor_path, sensitivity=None, use_right_eye=True, use_mouth_twitch=False, camera_path=None):
+    def __init__(self, predictor_path, sensitivity=None, use_right_eye=True, camera_path=None):
         self.detector = dlib.get_frontal_face_detector()
         self.cap = cv2.VideoCapture(0)
         if camera_path:
             self.cap.open(camera_path)
         if not self.cap.isOpened():
-            raise Exception(f'No camera available')
+            raise Exception('No camera available')
         self.predictor = dlib.shape_predictor(predictor_path)
         self.is_calibrated = False
         self.nose_y = 0
@@ -48,20 +48,23 @@ class Headmouse(metaclass=HeadmouseSingleton):
         self.center = [self.nose_x, self.nose_y]
         self.coef_sens = sensitivity or 0.3
         self.controller = MouseController(self.coef_sens)
-        self.wink_function = None
-        self.use_mouth_twitch = use_mouth_twitch
+        self.right_wink_function = None
+        self.left_wink_function = None
         self.mouth_twitched_function = None
-        self.thresh_x = self.thresh_y = 5
-        if use_right_eye:
-            self.eye_points = list(range(36, 42))
-        else:
-            self.eye_points = list(range(42, 48))
+        self.thresh_x = 20
+        self.thresh_y = 10
+        self.right_eye_points = list(range(42, 48))
+        self.left_eye_points = list(range(36, 42))
         self.nose_point = 34
-        self.mouth_right_points = [55, 65]
+        self.mouth_right_points = [54, 64]
         self.ear_thresh = 0.2
-        self.ear_consec_frames = 2
-        self.eye_counter = 0
-        self.prev_mouth_position = [0, 0]
+        self.ear_consec_frames = 4
+        self.right_counter = 0
+        self.left_counter = 0
+        self.mouth_twitch_debounce = False
+        self.twitch_thresh_inactive = 11
+        self.twitch_thresh_active = 15
+        self.first_mouth_position_set = False
 
     def refresh(self):
         """
@@ -75,7 +78,11 @@ class Headmouse(metaclass=HeadmouseSingleton):
         if ret:
             gray = cv2.cvtColor(self.frame, cv2.COLOR_BGR2GRAY)
             rects = self.detector(gray, 0)
-            for rect in rects:
+            try:
+                rect = get_closest_face(rects)
+            except IndexError:
+                rect = None
+            if rect:
                 landmarks = np.matrix(
                     [[p.x, p.y] for p in self.predictor(self.frame, rect).parts()])
                 self._update_nose_position(landmarks)
@@ -96,16 +103,27 @@ class Headmouse(metaclass=HeadmouseSingleton):
         """
         self.is_calibrated = False
 
-    def on_eye_closed(self, function):
+    def on_right_eye_closed(self, function):
         """
-        Override what happens when the user winks.
+        Override what happens when the user winks with right eye.
         Function must be defined and passed as an argument without 
         parenthesis. Example:
         def myFunction: 
             pass
         Headmouse.on_eye_closed(myFunction)
         """
-        self.wink_function = function
+        self.right_wink_function = function
+
+    def on_left_eye_closed(self, function):
+        """
+        Override what happens when the user winks with left eye.
+        Function must be defined and passed as an argument without 
+        parenthesis. Example:
+        def myFunction: 
+            pass
+        Headmouse.on_eye_closed(myFunction)
+        """
+        self.left_wink_function = function
 
     def on_mouth_twitched(self, function):
         """
@@ -132,25 +150,25 @@ class Headmouse(metaclass=HeadmouseSingleton):
         rcp: right corner points
         rel: relative
         """
-        if self.use_mouth_twitch:
-            self.mouth_right_corner = landmarks[self.mouth_right_points]
-            right_corner_position = self.mouth_right_corner[0]
-            rcp_x = right_corner_position[:, 0]
-            rcp_y = right_corner_position[:, 1]
-            rel_rcp_x = int(rcp_x - self.nose_x)
-            rel_rcp_y = int(self.nose_y - rcp_y)
-            print(rel_rcp_x, rel_rcp_y)
-            if self.prev_mouth_position[0] not in range(rel_rcp_x - 2, rel_rcp_y + 2):
-                if self.mouth_twitched_function is not None:
-                    self.mouth_twitched_function()
-                else:
-                    self.controller.mouth_twitch()
-                self.prev_mouth_position[0] = rel_rcp_x
+        mouth_right_corner = landmarks[self.mouth_right_points][0]
+        coords_mouth = (mouth_right_corner.item(0), mouth_right_corner.item(1))
+        if not self.first_mouth_position_set:
+            # thresh_length = ((coords_nose[0] - coords_mouth_first[0])**2 + (coords_nose[1] - coords_mouth_first[1])**2)**0.5
+            self.distance_x = self.nose_x - coords_mouth[0]
+            self.distance_y = self.nose_y - coords_mouth[1]
+            self.first_mouth_position_set = True
+        else:
+            finishing_point = (self.nose_x - self.distance_x, self.nose_y - self.distance_y)
+            distance = ((finishing_point[0].item(0) - coords_mouth[0])**2 + (finishing_point[1].item(0) - coords_mouth[1])**2)**0.5
+            if distance > self.twitch_thresh_active and not self.mouth_twitch_debounce:
+                self.controller.mouth_twitch()
+                self.mouth_twitch_debounce = True
+            if distance < self.twitch_thresh_inactive:
+                self.mouth_twitch_debounce = False
 
     def _update_position(self):
-        rel_x_mov = self.coef_sens * (self.nose_x - self.center[0])
-        rel_y_mov = self.coef_sens * (self.nose_y - self.center[1])
-        #right
+        rel_x_mov = self.nose_x - self.center[0]
+        rel_y_mov = self.nose_y - self.center[1]
         if rel_x_mov > self.thresh_x:
             self.controller.right(self.nose_x, self.center)
         #left
@@ -167,18 +185,22 @@ class Headmouse(metaclass=HeadmouseSingleton):
         """
         ear: eye aspect ratio
         """
-        self.eye = landmarks[self.eye_points]
-        ear = eye_aspect_ratio(self.eye)
-        if ear < self.ear_thresh:
-            self.eye_counter += 1
-        else:
-            if self.eye_counter >= self.ear_consec_frames:
-                if self.wink_function is not None:
-                    self.wink_function()
-                else:
-                    self.controller.wink()
-            self.eye_counter = 0
-
+        right_eye = landmarks[self.right_eye_points]
+        left_eye = landmarks[self.left_eye_points]
+        [right_winked, self.right_counter] = eye_processing(right_eye, self.right_counter)
+        [left_winked, self.left_counter] = eye_processing(left_eye, self.left_counter)
+        if right_winked:
+            if self.right_wink_function is not None:
+                self.right_wink_function()
+            else:
+                self.controller.right_wink()
+        #right wink has priority over left
+        elif left_winked:
+            if self.left_wink_function is not None:
+                self.left_wink_function()
+            else:
+                self.controller.left_wink()       
+        
     def _update_nose_position(self, landmarks):
         nose = landmarks[self.nose_point]
         nose_position = nose[0]
@@ -198,3 +220,17 @@ class Headmouse(metaclass=HeadmouseSingleton):
         """
         self.thresh_x = value_x
         self.thresh_y = value_y
+
+    def update_coef_sens(self, value):
+        self.coef_sens = value
+        self.controller.update_coef_sens(self.coef_sens)
+
+    def update_mouth_thresh(self, value_inactive, value_active):
+        self.twitch_thresh_inactive = value_inactive
+        self.twitch_thresh_active = value_active
+
+    def update_mouth_active_thresh(self, value_active):
+        self.twitch_thresh_active = value_active
+
+    def update_mouth_thresh(self, value_inactive):
+        self.twitch_thresh_inactive = value_inactive

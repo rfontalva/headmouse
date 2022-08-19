@@ -5,6 +5,12 @@ using the tip of the nose as reference point.
 It can also be customized to trigger different functions instead of a mouse click when the user winks.
 To use the module it\'s necessary to have the file shape_predictor_68_face_landmarks.dat.
 
+Features:
+Single user (closest one) detection.
+Detection of right and left eyes' wink.
+Detection of mouth's right corner movement.
+Improved nose threshold to avoid unvoluntary movement.
+
 Compressed:
 <http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2>
 
