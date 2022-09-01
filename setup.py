@@ -17,7 +17,7 @@ name='headmouse',
  
 packages=find_packages(),
 
-version='1.0.6',
+version='1.0.6.1',
 
 license='MIT',
 

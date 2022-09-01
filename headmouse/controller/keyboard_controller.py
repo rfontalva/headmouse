@@ -1,4 +1,5 @@
 from .abstract_controller import AbstractController
+from pynput.keyboard import Controller
 
 class KeyboardController(AbstractController):
     def __init__(self) -> None:
