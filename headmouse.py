@@ -52,7 +52,7 @@ class Headmouse(metaclass=HeadmouseSingleton):
         self.left_wink_function = None
         self.mouth_twitched_function = None
         self.thresh_x = 20
-        self.thresh_y = 10
+        self.thresh_y = 25
         self.right_eye_points = list(range(42, 48))
         self.left_eye_points = list(range(36, 42))
         self.nose_point = 34
@@ -169,17 +169,23 @@ class Headmouse(metaclass=HeadmouseSingleton):
     def _update_position(self):
         rel_x_mov = self.nose_x - self.center[0]
         rel_y_mov = self.nose_y - self.center[1]
-        if rel_x_mov > self.thresh_x:
+        right_condition = rel_x_mov > self.thresh_x
+        left_condition = rel_x_mov < -self.thresh_x
+        up_condition = rel_y_mov < -self.thresh_y
+        down_condition = rel_y_mov > self.thresh_y
+        if right_condition:
             self.controller.right(self.nose_x, self.center)
         #left
-        if rel_x_mov < -self.thresh_x:
+        if left_condition:
             self.controller.left(self.nose_x, self.center)
         #down
-        if rel_y_mov > self.thresh_y:
+        if down_condition:
             self.controller.down(self.nose_y, self.center)
         #up
-        if rel_y_mov < -self.thresh_y:
+        if up_condition:
             self.controller.up(self.nose_y, self.center)
+        elif not up_condition and not down_condition and not right_condition and not left_condition:
+            self.controller.center() #allows to debounce and perform discrete actions
 
     def _eye_processing(self, landmarks):
         """

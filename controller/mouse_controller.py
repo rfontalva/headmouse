@@ -24,6 +24,9 @@ class MouseController:
     def right_wink(self):
         self.mouse.click(Button.left, 1)
 
+    def center(self):
+        pass
+
     def left_wink(self):
         pass
 

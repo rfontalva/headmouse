@@ -24,6 +24,9 @@ class KeyboardController(AbstractController):
         else:
             self.strategy = {'type': 'letters', 'left': 'a', 'right': 'd', 'up': 'w', 'down': 's'}
 
+    def center(self):
+        pass
+
     def left_wink(self):
         pass
 

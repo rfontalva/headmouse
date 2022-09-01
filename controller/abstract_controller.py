@@ -21,6 +21,10 @@ class AbstractController(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def center(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
     def right_wink(self, *args, **kwargs):
         pass
 
