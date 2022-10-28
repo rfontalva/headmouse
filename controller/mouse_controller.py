@@ -1,7 +1,7 @@
 from .abstract_controller import AbstractController
 from pynput.mouse import Button, Controller
 
-class MouseController:
+class MouseController(AbstractController):
     def __init__(self, coef_sens) -> None:
         self.mouse = Controller()
         self.coef_sens = coef_sens

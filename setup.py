@@ -17,7 +17,7 @@ name='headmouse',
  
 packages=find_packages(),
 
-version='1.0.6.1',
+version='1.0.7',
 
 license='MIT',
 
@@ -41,7 +41,8 @@ install_requires=[
     'dlib',
     'opencv-python',
     'pynput',
-    'scipy'
+    'scipy',
+    'numpy'
 ],
 
 # https://pypi.org/classifiers/ 

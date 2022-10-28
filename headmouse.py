@@ -18,8 +18,8 @@ import dlib
 from typing import TypeVar
 from .headmouse_singleton import HeadmouseSingleton
 from .headmouse_utils import eye_processing, get_closest_face
-from .controller.mouse_controller import MouseController
-from .controller.abstract_controller import AbstractController
+from .controller import MouseController
+from .controller import AbstractController
 
 AbstractController_ = TypeVar('AbstractController_', bound=AbstractController)
 
@@ -29,12 +29,9 @@ class Headmouse(metaclass=HeadmouseSingleton):
 
     sensitivity (int): Determines how fast and precisely the mouse pointer
     will move, default is 0.3.
-    use_right_eye (bool): Which eye will be used to trigger the wink
-    command.
-    use_mouth_twitch (bool): Whether mouth movements will be
-    evaluated or not.
+    camera_path: if there are multiple cameras connected, select which one opens.
     """
-    def __init__(self, predictor_path, sensitivity=None, use_right_eye=True, camera_path=None):
+    def __init__(self, predictor_path, sensitivity=None, camera_path=None):
         self.detector = dlib.get_frontal_face_detector()
         self.cap = cv2.VideoCapture(0)
         if camera_path:
@@ -46,6 +43,7 @@ class Headmouse(metaclass=HeadmouseSingleton):
         self.nose_y = 0
         self.nose_x = 0
         self.center = [self.nose_x, self.nose_y]
+        self.y_offset = 10
         self.coef_sens = sensitivity or 0.3
         self.controller = MouseController(self.coef_sens)
         self.right_wink_function = None
@@ -172,7 +170,7 @@ class Headmouse(metaclass=HeadmouseSingleton):
         right_condition = rel_x_mov > self.thresh_x
         left_condition = rel_x_mov < -self.thresh_x
         up_condition = rel_y_mov < -self.thresh_y
-        down_condition = rel_y_mov > self.thresh_y
+        down_condition = rel_y_mov > (self.thresh_y - self.y_offset)
         if right_condition:
             self.controller.right(self.nose_x, self.center)
         #left
@@ -213,19 +211,34 @@ class Headmouse(metaclass=HeadmouseSingleton):
         self.nose_x = nose_position[:, 0]
         self.nose_y = nose_position[:, 1]
 
-    def show_image(self):
+    def show_image(self, show_thresh=True):
+        if show_thresh:
+            start = (int(self.center[0] - self.thresh_x), int(self.center[1] - self.thresh_y))
+            end = (int(self.center[0] + self.thresh_x), int(self.center[1] + self.thresh_y + - self.y_offset))
+            cv2.circle(self.frame, (self.nose_x[0,0], self.nose_y[0,0]), 3, (255,0,0), 1)
+            cv2.rectangle(self.frame, start, end, (255,0,0), 1)
         cv2.imshow('My window', self.frame)
 
     def destroy_window(self):
         cv2.destroyAllWindows()
 
-    def update_threshold(self, value_x, value_y):
+    def update_threshold(self, value_x, value_y, y_offset=None):
         """
         Defines how much the user has to move from the reference
         point for the movement to be valid
         """
         self.thresh_x = value_x
         self.thresh_y = value_y
+        if y_offset is not None and y_offset > 0:
+            self.y_offset = y_offset
+
+    def update_y_offset(self, y_offset=None):
+        """
+        Modifies y axis offset, how m
+        point for the movement to be valid
+        """
+        if y_offset > 0:
+            self.y_offset = y_offset
 
     def update_coef_sens(self, value):
         self.coef_sens = value
